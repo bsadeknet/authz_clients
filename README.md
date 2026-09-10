@@ -20,5 +20,5 @@ composer require bsadeknet/authz-client
 ### publish konfigurasi
 ```bash
 #ketik perintah ini di terminal project Laravel
-php artisan vendor:publish --tag=authz-config
+php artisan vendor:publish --tag=authz_client-config
 ```
