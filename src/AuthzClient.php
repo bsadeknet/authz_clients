@@ -66,11 +66,11 @@ class AuthzClient
             switch ($this->responseType) {
                 case 'array':
                     return $response->toArray();
-                    // $content = ['id' => 521583, 'name' => 'symfony-docs', ...]
+                    // $content = ['aud' => 521583, 'name' => 'symfony-docs', ...]
                     break;
                 case 'string':
                     return $response->getContent();
-                    // $content = '{"id":521583, "name":"symfony-docs", ...}'
+                    // $content = '{"aud":521583, "name":"symfony-docs", ...}'
                     break;
                 
                 default:
