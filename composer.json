@@ -1,6 +1,5 @@
 {
     "name": "bsadeknet/authz-client",
-    "version": "1.0.1",
     "description": "Library PHP untuk remote token introspection/decrypt ke Laravel Passport Authz Server",
     "type": "library",
     "license": "MIT",
