@@ -27,7 +27,8 @@
     },
     "scripts": {
         "actions": "composer test",
-        "test": "phpunit"
+        "test": "/usr/bin/php8.4 ./vendor/bin/phpunit tests/Unit",
+        "test:integration": "/usr/bin/php8.4 ./vendor/bin/phpunit tests/Integration"
     },
     "minimum-stability": "stable",
     "extra": {

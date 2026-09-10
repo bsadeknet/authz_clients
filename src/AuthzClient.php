@@ -1,6 +1,7 @@
 <?php
 
-namespace BSadekNet\AuthzClient;
+namespace Bsadeknet\AuthzClient;
+use Symfony\Component\HttpClient\HttpClient;
 use Bsadeknet\AuthzClient\Exceptions\AuthzException;
 
 class AuthzClient
@@ -22,8 +23,9 @@ class AuthzClient
         }
         $this->authzUrl = $config['url'];
         $this->authzTokenType = ($config['token_type'] ?? "Bearer");
-        $this->authzMethod = strtolower($config['method'] ?? "post");
-        $this->timeout = ($config['timeout'] ?? 50 );
+        $this->authzMethod = strtoupper($config['method'] ?? "post");
+        $this->timeout = ($config['timeout'] ?? "50" );
+        $this->responseType = ($config['response_type'] ?? "" );
     }
 
     /**
@@ -33,7 +35,7 @@ class AuthzClient
      * @return array Payload data user jika valid
      * @throws AuthzException Jika token invalid atau gagal menghubungi Authz Server
      */
-    public function verifyToken(string $token): array
+    public function verifyToken(string $token)
     {
         // Bersihkan prefix 'Bearer ' jika ada
         if (str_starts_with($token, 'Bearer ')) {
@@ -41,33 +43,41 @@ class AuthzClient
         }
 
         $payloadToken = implode(" ",[$this->authzTokenType,$token]);
+        $client = HttpClient::create();
 
-        $ch = curl_init($this->authzUrl);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $this->authzMethod);
-        curl_setopt($ch, CURLOPT_TIMEOUT, $this->timeout);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Content-Type: application/json',
-            'Accept: application/json',
-            'Authorization: '. $payloadToken
-        ]);
+        $response = $client->request(
+            $this->authzMethod,
+            $this->authzUrl,
+            [
+                'max_redirects' => 0,
+                'headers'=>[
+                    "Content-Type"=>"application/json",
+                    "Accept"=>"application/json",
+                    "Authorization"=>$payloadToken
+                ]
+            ]
+        );
+        $statusCode = $response->getStatusCode();
+        if ($statusCode == 200) {
+            // $statusCode = 200
+            $contentType = $response->getHeaders()['content-type'][0];
+            // $contentType = 'application/json'
 
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curlError = curl_error($ch);
-        curl_close($ch);
-
-        if ($curlError) {
-            throw new AuthzException("Gagal terhubung ke Authz Server: {$curlError}");
+            switch ($this->responseType) {
+                case 'array':
+                    return $response->toArray();
+                    // $content = ['id' => 521583, 'name' => 'symfony-docs', ...]
+                    break;
+                case 'string':
+                    return $response->getContent();
+                    // $content = '{"id":521583, "name":"symfony-docs", ...}'
+                    break;
+                
+                default:
+                    return $statusCode;
+                    break;
+            }
         }
-
-        $data = json_decode($response, true);
-
-        if ($httpCode !== 200 || !isset($data['active']) || $data['active'] !== true) {
-            $message = $data['message'] ?? 'Token tidak valid atau sudah kedaluwarsa di Authz Server';
-            throw new AuthzException($message, $httpCode ?: 401);
-        }
-
-        return $data ?? [];
+        return $statusCode;
     }
 }
